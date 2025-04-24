@@ -1,103 +1,169 @@
-import Image from "next/image";
+// app/page.tsx
 
-export default function Home() {
+"use client"
+
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
+
+export default function HomePage() {
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    industry: "",
+    role: ""
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, "waitlist"), formData);
+      alert("Thanks for joining the waitlist!");
+      setFormData({ name: "", email: "", industry: "", role: "" });
+      setShowForm(false);
+    } catch (err) {
+      console.error("Firestore submission failed:", err);
+      alert("Something went wrong. Please try again.");
+    }
+    
+  };
+
+  const borderAnimation = {
+    hidden: { pathLength: 0 },
+    visible: {
+      pathLength: 1,
+      transition: {
+        duration: 1.2,
+        ease: "easeInOut"
+      }
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen bg-white text-black font-sans px-6 py-12 sm:px-12 md:px-24 relative overflow-hidden">
+      {/* Hero Section */}
+      <section className="text-center space-y-8 pt-32 pb-48 relative z-10">
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight">Mano</h1>
+        <p className="text-xl md:text-2xl text-gray-700 max-w-xl mx-auto">
+          Your Chief of Staff for Capital Deployment.
+        </p>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        <div className="relative mx-auto max-w-md w-full">
+          {!showForm && (
+            <motion.button
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowForm(true)}
+              className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-800 transition relative z-10"
+            >
+              Get Early Access
+            </motion.button>
+          )}
+
+          <AnimatePresence>
+            {showForm && (
+              <motion.svg
+                initial="hidden"
+                animate="visible"
+                viewBox="0 0 550 350"
+                className="absolute top-0 left-0 w-full h-full"
+              >
+                <motion.rect
+                  x="1"
+                  y="1"
+                  width="548"
+                  height="348"
+                  rx="20"
+                  fill="none"
+                  stroke="black"
+                  strokeWidth="2"
+                  variants={borderAnimation}
+                />
+              </motion.svg>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showForm && (
+              <motion.form
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 1.2 }}
+                onSubmit={handleSubmit}
+                className="relative z-10 mt-4 w-full space-y-4 px-6 pt-10"
+              >
+                <input
+                  name="name"
+                  type="text"
+                  placeholder="Your name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Your email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <select
+                  name="industry"
+                  value={formData.industry}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                >
+                  <option value="">Select your industry</option>
+                  <option value="vc">Venture Capital</option>
+                  <option value="pe">Private Equity</option>
+                  <option value="fo">Family Office</option>
+                  <option value="pension">Pension Fund</option>
+                  <option value="other">Other</option>
+                </select>
+                <input
+                  name="role"
+                  type="text"
+                  placeholder="Your role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-black text-white px-4 py-3 rounded-md font-semibold hover:bg-gray-800 transition"
+                >
+                  Submit
+                </button>
+              </motion.form>
+            )}
+          </AnimatePresence>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      {/* One-liner Power Section */}
+      <section className="text-center max-w-3xl mx-auto space-y-8 relative z-10">
+        <p className="text-2xl text-gray-600">
+          Capital is abundant.
+        </p>
+        <p className="text-3xl font-semibold">
+          Time, focus, and leverage are not.
+        </p>
+        <p className="text-xl text-gray-600">
+          Mano quietly handles the decks, the threads, the chaos.
+        </p>
+        <p className="text-black font-medium">
+          So you can decide—faster, clearer, and earlier.
+        </p>
+      </section>
+    </main>
   );
 }
