@@ -129,6 +129,8 @@ export default function HomePage() {
           >
             Capital<span className="text-gray-300">.</span> Clarity<span className="text-gray-300">.</span> Confidence<span className="text-gray-300">.</span>
           </motion.h1>
+
+          
           
           <motion.div variants={animations.fadeIn} className="max-w-3xl">
             <p className="text-xl md:text-2xl text-gray-700 mb-10">
@@ -159,6 +161,30 @@ export default function HomePage() {
           </motion.div>
         </motion.div>
       </section>
+      <motion.img 
+  src="/main.png"
+  alt="Hero Visual"
+  initial={{ opacity: 0, y: 40, scale: 0.98, filter: "blur(8px)" }}
+  animate={{ 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    filter: "blur(0px)",
+    transition: {
+      duration: 1.2,
+      ease: "easeOut"
+    }
+  }}
+  className="w-full max-w-4xl mx-auto rounded-xl shadow-2xl ring-4 ring-white/10 backdrop-blur-sm"
+
+/>
+
+
+      
+
+
+
+      
 
       {/* Rotating Testimonials */}
       <section className="bg-gray-50 py-16 px-6 sm:px-12 md:px-24 relative z-10">
