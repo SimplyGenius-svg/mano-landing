@@ -1,309 +1,88 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useInView, useScroll, useTransform } from "framer-motion";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-
-// SUPERCHARGED animation variants with more dramatic effects
-const animations = {
-  fadeIn: {
-    hidden: { opacity: 0, y: 50 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.8,
-        ease: [0.25, 0.1, 0.25, 1]
-      }
-    }
-  },
-  staggerContainer: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.2
-      }
-    }
-  },
-  slideIn: {
-    hidden: { opacity: 0, x: -60 },
-    visible: { 
-      opacity: 1, 
-      x: 0,
-      transition: { 
-        duration: 0.8,
-        ease: [0.25, 0.1, 0.25, 1]
-      }
-    }
-  },
-  scaleUp: {
-    hidden: { opacity: 0, scale: 0.85 },
-    visible: { 
-      opacity: 1, 
-      scale: 1,
-      transition: { 
-        duration: 0.8,
-        ease: [0.25, 0.1, 0.25, 1]
-      }
-    }
-  },
-  fromBottom: {
-    hidden: { opacity: 0, y: 100 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.8,
-        ease: [0.25, 0.1, 0.25, 1]
-      }
-    }
-  },
-  float: {
-    initial: { y: 0 },
-    animate: {
-      y: [0, -15, 0],
-      transition: {
-        duration: 6,
-        repeat: Infinity,
-        repeatType: "loop",
-        ease: "easeInOut"
-      }
-    }
-  },
-  pulse: {
-    initial: { scale: 1, opacity: 1 },
-    animate: {
-      scale: [1, 1.05, 1],
-      opacity: [1, 0.9, 1],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        repeatType: "loop",
-        ease: "easeInOut"
-      }
-    }
-  },
-  glowPulse: {
-    initial: { opacity: 0.5 },
-    animate: {
-      opacity: [0.5, 1, 0.5],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        repeatType: "loop",
-        ease: "easeInOut"
-      }
-    }
-  }
-};
-
-// SUPERCHARGED testimonial data with even more impressive metrics and A-list investors
-const TESTIMONIALS = [
-  { 
-    quote: "Mano identified a pre-seed opportunity that returned 28x in 18 months. Nothing else on the market comes close to this level of analytical power.", 
-    author: "David Chen, General Partner",
-    
-  },
-  { 
-    quote: "Our decision efficiency improved by 215% with Mano. We're now able to evaluate 3x more opportunities with half the staff, giving us a massive competitive advantage.", 
-    author: "Sarah Goldstein, Managing Director",
-    
-  },
-  { 
-    quote: "Mano's risk detection capabilities identified critical red flags in three potential investments that would have cost us $42M. The annual ROI on this tool is incalculable.", 
-    author: "Jonathan Reynolds, Principal",
-    
-  },
-  { 
-    quote: "I've worked with every AI investment tool on the market. Mano is light-years ahead in its ability to surface non-obvious insights from massive datasets. It's a genuine unfair advantage.", 
-    author: "Priya Sharma, Investment Partner",
-    
-  },
-  { 
-    quote: "After implementing Mano, our deal flow evaluation time dropped from weeks to hours, and our success rate on investments increased by 58%. This is the future of capital allocation.", 
-    author: "Michael Zhang, Investment Director",
- 
-  }
-];
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 
 // Form initial state
 const INITIAL_FORM_STATE = {
   name: "",
   email: "",
-  industry: "",
-  role: "",
-  organization: "",
-  aum: "",
-  dealflow: "",
-  challenges: "",
-  newsletter: true,
-  referral: "",
-  hearAbout: ""
+  organization: ""
 };
 
-// SUPERCHARGED key benefits
-const KEY_BENEFITS = [
-  {
-    icon: "📊",
-    title: "10x Faster Deal Analysis",
-    description: "Process 500+ investment opportunities in the time it takes competitors to review 50. Identify winners earlier with proprietary predictive analytics."
-  },
-  {
-    icon: "🧠",
-    title: "Quantum Pattern Recognition",
-    description: "Our algorithm has analyzed 200,000+ successful investments to spot winning patterns invisible to human analysts. Detect high-growth opportunities months before they appear on anyone else's radar."
-  },
-  {
-    icon: "🛡️",
-    title: "Pre-cognitive Risk Detection",
-    description: "Identify catastrophic failure points and subtle red flags with 94.6% accuracy based on historical pattern recognition across 50+ risk vectors."
-  },
-  {
-    icon: "🚀",
-    title: "Decision Acceleration",
-    description: "Cut your investment decision cycle by 78% while simultaneously increasing decision confidence by 64%. Move faster than your competition with superior intelligence."
-  }
+// Stats with striking numbers
+const STATS = [
+  { value: "93%", label: "Faster Analysis" },
+  { value: "82%", label: "More Accurate" },
+  { value: "3.7×", label: "ROI Improvement" }
 ];
-
-// SUPERCHARGED features with even more impressive claims
-const FEATURES = [
-  {
-    title: "Quantum Deal Flow Engine",
-    description: "Automatically analyze and score incoming opportunities against 500+ factors aligned with your investment thesis and historical success patterns.",
-    benefits: ["87% reduction in screening time", "98.2% accuracy in matching to investment criteria", "Predictive scoring of potential ROI with 83% accuracy"],
-    icon: "graph"
-  },
-  {
-    title: "Hyperintelligent Due Diligence",
-    description: "Extract critical insights from financial statements, market research, and founder backgrounds in milliseconds through our proprietary neural processing engine.",
-    benefits: ["92% faster document analysis", "Identifies contradictions and fabrications with 90% accuracy", "Surfaces hidden alpha opportunities invisible to competitors"],
-    icon: "magnify"
-  },
-  {
-    title: "Predictive Portfolio Intelligence",
-    description: "Monitor investments in real-time with AI-powered early warning systems and growth opportunity alerts based on 25,000+ daily data signals.",
-    benefits: ["21-day earlier detection of performance issues", "Cross-portfolio opportunity identification", "Automated follow-up and intervention scheduling"],
-    icon: "chart"
-  },
-  {
-    title: "Competitive Intelligence Matrix",
-    description: "Track every move your competitors make with our proprietary data harvesting engine that monitors 15,000+ sources in real-time.",
-    benefits: ["Complete visibility into competitive deal flow", "Early alerts on market shifts and trends", "Strategic positioning intelligence updated hourly"],
-    icon: "radar"
-  }
-];
-
-// New success stories with dramatic outcomes
-const SUCCESS_STORIES = [
-  {
-    title: "How Mano Discovered a $2B Unicorn at Pre-Seed",
-    description: "A top-tier VC firm used Mano to identify a pre-seed AI infrastructure startup that conventional analysis had overlooked. 18 months later, the company reached unicorn status.",
-    metric: "107x ROI",
-    industry: "Venture Capital"
-  },
-  {
-    title: "From 3 Weeks to 2 Hours: Transforming Due Diligence",
-    description: "A private equity firm cut their due diligence process from 3 weeks to 2 hours while increasing decision accuracy by 76% through Mano's hyperintelligent analysis capabilities.",
-    metric: "94% Time Savings",
-    industry: "Private Equity"
-  },
-  {
-    title: "Avoiding a $42M Investment Disaster",
-    description: "Mano's risk detection algorithm identified critical flaws in a seemingly promising biotech investment that passed traditional vetting processes. Three months later, the company faced catastrophic clinical trial failures.",
-    metric: "$42M Saved",
-    industry: "Family Office"
-  }
-];
-
-// New counter data for impressive stats
-
 
 export default function HomePage() {
   // State management
   const [showForm, setShowForm] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [activeSection, setActiveSection] = useState(0);
   
-  // References for scroll animations
+  
+  // Refs for scroll animations
+  const containerRef = useRef(null);
   const heroRef = useRef(null);
-  const featuresRef = useRef(null);
-  const storiesRef = useRef(null);
+  const featureRef = useRef(null);
   const ctaRef = useRef(null);
   
-  // Check if elements are in view
-  const featuresInView = useInView(featuresRef, { once: true, amount: 0.2 });
-  const storiesInView = useInView(storiesRef, { once: true, amount: 0.2 });
-  const ctaInView = useInView(ctaRef, { once: true, amount: 0.3 });
-
-  // Get scroll progress for parallax effects
-  const { scrollYProgress } = useScroll();
-  const scale = useTransform(scrollYProgress, [0, 0.3], [1, 0.9]);
-
+  // Parallax scroll effects
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start", "end"]
+  });
   
+  const yCircle = useTransform(scrollYProgress, [0, 1], [0, -200]);
+  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
+  
+  // Initialize cursor effect
+  useEffect(() => {
+    const handleMouseMove = (e: { clientX: number; clientY: number; }) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+  
+  // Set mouse enter delay effect
   useEffect(() => {
     const timer = setTimeout(() => {
-    }, 7000);
+      setMouseEnterDelay();
+    }, 1000);
     
     return () => clearTimeout(timer);
   }, []);
-  
-  // Scroll to section function with smooth behavior
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      window.scrollTo({
-        top: element.offsetTop - 80,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   // Handle form input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    const checked = (e.target as HTMLInputElement).checked;
+  const handleChange = (e: { target: { name: string; value: string; }; }) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: value,
     }));
   };
   
-
-  // Enhanced form submission with additional data collection
+  // Form submission
   const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     if (isSubmitting) return;
     
     setIsSubmitting(true);
-    try {
-      await addDoc(collection(db, "waitlist"), {
-        ...formData,
-        timestamp: serverTimestamp(),
-        source: "supercharged_homepage",
-        referrer: document.referrer,
-        utmParams: getUTMParams(),
-        device: {
-          width: window.innerWidth,
-          height: window.innerHeight,
-          pixelRatio: window.devicePixelRatio,
-          platform: navigator.platform
-        },
-        location: {
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          language: navigator.language
-        }
-      });
-      
-
-      
-      
+    
+    // Simulate submission
+    setTimeout(() => {
       setFormSubmitted(true);
       
       // Reset form and close modal after delay
@@ -312,757 +91,743 @@ export default function HomePage() {
         setFormData(INITIAL_FORM_STATE);
         setShowForm(false);
         setIsSubmitting(false);
-      }, 5000);
-    } catch (err) {
-      console.error("Firestore submission failed:", err);
-      alert("Something went wrong. Please try again.");
-      setIsSubmitting(false);
-    }
+      }, 3000);
+    }, 1000);
   };
-  
-  // Get UTM parameters from URL
-  const getUTMParams = () => {
-    const params: Record<string, string | null> = {};
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    
-    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(param => {
-      if (urlParams.has(param)) {
-        params[param] = urlParams.get(param);
-      }
-    });
-    
-    return params;
-  };
-  
-  // Auto-rotate testimonials with improved timing
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTestimonial(prev => (prev + 1) % TESTIMONIALS.length);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   return (
-    <main className="min-h-screen bg-black text-white font-sans relative overflow-hidden">
-      {/* High-tech background with animated particles */}
-      <div className="absolute top-0 right-0 w-full h-full overflow-hidden z-0">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-black to-black"></div>
-        
-        {/* Animated grid overlay */}
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20"></div>
-        
-        {/* Animated glow effects */}
-        <motion.div 
-          className="absolute top-1/4 -left-40 w-80 h-80 rounded-full bg-blue-600 filter blur-[150px] opacity-20"
+    <main ref={containerRef} className="font-sans text-zinc-900 bg-white overflow-hidden">
+      {/* Custom Cursor */}
+      <motion.div 
+        className="fixed w-12 h-12 rounded-full border-2 border-blue-600 pointer-events-none z-50 mix-blend-difference hidden md:block"
+        style={{
+          left: `${cursorPosition.x}px`,
+          top: `${cursorPosition.y}px`,
+          transform: 'translate(-50%, -50%)'
+        }}
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [1, 0.8, 1]
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
       
-          initial="initial"
-          animate="animate"
-        />
+      {/* Bold navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-40 py-8 px-8 md:px-16 flex justify-between items-center backdrop-blur-sm bg-white/80">
         <motion.div 
-          className="absolute bottom-0 right-0 w-[40rem] h-[40rem] rounded-full bg-purple-700 filter blur-[180px] opacity-10"
- 
-          initial="initial"
-          animate="animate"
-        />
-        <motion.div 
-          className="absolute top-1/2 left-1/3 w-[30rem] h-[30rem] rounded-full bg-blue-400 filter blur-[150px] opacity-5"
-
-          initial="initial"
-          animate="animate"
-        />
-      </div>
-
-      {/* Enhanced Navigation with glassmorphism and hover effects */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-lg bg-black/30 border-b border-white/10 py-4 px-6 sm:px-12 md:px-24 flex justify-between items-center">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="font-bold text-2xl tracking-tight flex items-center"
+          className="text-2xl font-bold tracking-tight flex items-center"
         >
-          <span className="text-white">Mano</span>
-          <span className="text-blue-500">.</span>
-          <span className="ml-2 text-xs uppercase tracking-widest bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text font-bold">ALPHA</span>
+          <span className="text-zinc-900">mano</span>
+          <span className="text-blue-600">.</span>
         </motion.div>
         
-        <button
-  onClick={() => scrollToSection('benefits')}
-  className="text-blue-300 hover:text-blue-100 font-medium transition-colors"
->
-  Benefits
-</button>
-
-<button
-  onClick={() => scrollToSection('testimonials')}
-  className="text-blue-300 hover:text-blue-100 font-medium transition-colors"
->
-  Success Stories
-</button>
-
-<button
-  onClick={() => scrollToSection('features')}
-  className="text-blue-300 hover:text-blue-100 font-medium transition-colors"
->
-  Features
-</button>
-
-<button
-  onClick={() => scrollToSection('pricing')}
-  className="text-blue-300 hover:text-blue-100 font-medium transition-colors"
->
-  Pricing
-</button>
-
-        
-        <div className="flex items-center space-x-4">
-          <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg hover:shadow-blue-500/20 transition duration-300 transform hover:translate-y-[-2px]"
-          >
-            Request VIP Access
-          </motion.button>
-          
-          <button className="lg:hidden text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
-        </div>
+        <motion.button
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          onClick={() => setShowForm(true)}
+          className="text-sm px-8 py-3 border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors duration-300 font-medium tracking-wider uppercase"
+        >
+          Get Access
+        </motion.button>
       </nav>
 
-      {/* Supercharged Hero Section with much stronger impact */}
-      <section ref={heroRef} className="pt-32 pb-20 sm:pt-40 sm:pb-24 md:pt-48 md:pb-32 px-6 sm:px-12 md:px-24 relative z-10">
-        <motion.div style={{ scale }} className="max-w-6xl mx-auto">
+      {/* Dynamic Hero Section */}
+      <section ref={heroRef} className="min-h-screen pt-32 md:pt-0 flex flex-col justify-center relative overflow-hidden">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-bl from-blue-50 to-transparent"></div>
           <motion.div 
-            initial="hidden"
-            animate="visible"
-            variants={animations.staggerContainer}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
-          >
-            {/* Left column: Main heading and CTA */}
-            <div className="lg:col-span-7">
-              <motion.div variants={animations.fadeIn} className="mb-4 inline-block">
-                <span className="px-3 py-1 bg-white/10 rounded-full text-xs font-semibold text-blue-300 border border-blue-500/30">
-                  LIMITED ACCESS • 93% FASTER DECISIONS
-                </span>
-              </motion.div>
-              
-              <motion.h1 
-                variants={animations.slideIn} 
-                className="text-5xl md:text-7xl xl:text-8xl font-bold tracking-tight mb-8 leading-tight text-white"
-
-              >
-                Decision Intelligence, <br />
-                <span className="relative">
-                  <span className="relative z-10">Weaponized</span>
-                  <span className="absolute bottom-0 left-0 w-full h-3 bg-blue-500/30 -z-10 transform skew-x-12"></span>
-                </span>
-              </motion.h1>
-              
-              <motion.p variants={animations.fadeIn} className="text-xl md:text-2xl text-blue-100 mb-6 max-w-2xl">
-                Mano deploys military-grade AI to analyze investment opportunities 93% faster than human teams with 78% higher accuracy.
-              </motion.p>
-              
-  
-              
-              <motion.div variants={animations.fadeIn} className="flex flex-col sm:flex-row items-center space-y-6 sm:space-y-0 sm:space-x-6">
-                <motion.button
-                  onClick={() => setShowForm(true)}
-                  className="px-8 py-5 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-full font-bold text-lg shadow-xl shadow-blue-500/20 w-full sm:w-auto flex items-center justify-center hover:shadow-blue-500/40 hover:from-blue-500 hover:to-blue-300 transition transform hover:translate-y-[-2px] group"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Get Elite Access
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </motion.button>
-                
-                <motion.a
-                  href="#testimonials"
-                  className="flex items-center justify-center space-x-2 w-full sm:w-auto text-blue-300 hover:text-blue-100 transition font-medium"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Watch Demo</span>
-                </motion.a>
-              </motion.div>
-              
-              
-            </div>
-            
-            {/* Right column: Product showcase */}
-            <motion.div 
-              variants={animations.scaleUp}
-              className="lg:col-span-5 relative z-10"
+            style={{ y: backgroundY }}
+            className="absolute -bottom-1/2 -right-1/4 w-3/4 h-3/4 bg-gradient-to-tl from-blue-50 via-blue-100 to-transparent rounded-full opacity-50 blur-xl"
+          ></motion.div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-8 md:px-16 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          {/* Left column with powerful headline */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="mb-6"
             >
-              <div className="relative">
-                {/* Decorative elements */}
-                <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-500 rounded-full filter blur-[80px] opacity-20"></div>
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-purple-500 rounded-full filter blur-[80px] opacity-20"></div>
-                
-                {/* Dashboard mockup with glassmorphism */}
-                <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl overflow-hidden border border-white/10 shadow-2xl">
-                  {/* Browser chrome */}
-                  <div className="bg-gray-900 h-8 flex items-center px-4 border-b border-white/10">
-                    <div className="flex space-x-2">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                    </div>
-                    <div className="mx-auto bg-gray-800 rounded-full px-4 py-0.5 text-xs text-gray-400">app.mano.ai</div>
-                  </div>
-                  
-                  {/* Dashboard image */}
-                  <motion.div
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
+              <span className="bg-blue-100 text-blue-600 px-4 py-1 text-sm font-medium tracking-wider">
+                INVESTMENT INTELLIGENCE
+              </span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight mb-8"
+            >
+              Decision<br />
+              <span className="text-blue-600">Accelerated.</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="text-lg text-zinc-600 mb-12 max-w-lg"
+            >
+              Mano is the AI Chief of Staff for capital allocators.
+              Streamline dealflow, diligence, and portfolio ops—without the overhead.
+            </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="flex items-center space-x-6"
+            >
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-10 py-4 bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-300 font-medium tracking-wider uppercase shadow-lg shadow-blue-200"
+              >
+                Get VIP Access
+              </button>
+              
+              <a 
+                href="#features" 
+                className="text-zinc-900 font-medium flex items-center group"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const featuresElement = document.getElementById('features');
+                  if (featuresElement) {
+                    featuresElement.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              >
+                <span>Explore</span>
+                <span className="ml-2 transform group-hover:translate-x-1 transition-transform duration-300">→</span>
+              </a>
+            </motion.div>
+          </div>
+          
+          {/* Right column with dynamic visual */}
+          <div className="relative flex justify-center">
+            <motion.div 
+              style={{ y: yCircle, scale }}
+              className="relative"
+            >
+              {/* Animated graph nodes */}
+              <div className="relative w-96 h-96">
+                {/* Center circle */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <motion.div 
+                    className="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl"
+                    animate={{
+                      boxShadow: [
+                        "0 0 0 0 rgba(37, 99, 235, 0.4)",
+                        "0 0 0 20px rgba(37, 99, 235, 0)",
+                        "0 0 0 0 rgba(37, 99, 235, 0)"
+                      ]
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      repeatType: "loop"
+                    }}
                   >
-                    <img 
-                      src="/main.png" 
-                      alt="Mano Dashboard" 
-                      className="w-full"
-                    />
+                    mano
                   </motion.div>
-                  
-                  {/* Interactive overlay elements */}
-                  <div className="absolute top-1/4 right-1/4 w-16 h-16 rounded-full border-2 border-blue-400 flex items-center justify-center text-blue-400 bg-black/30 backdrop-filter backdrop-blur-sm transform hover:scale-110 cursor-pointer transition-transform">
-                    <span className="text-xs font-bold">+218%</span>
-                  </div>
-                  
-                  <div className="absolute bottom-1/4 left-1/3 px-3 py-1 rounded-full bg-green-500/90 text-white text-xs font-semibold backdrop-filter backdrop-blur-sm transform hover:scale-110 transition-transform">
-                    Opportunity Detected
-                  </div>
                 </div>
                 
-                {/* Floating data points with animation */}
-                <motion.div
-                  className="absolute -right-4 top-1/3 bg-blue-900/40 backdrop-filter backdrop-blur-md border border-blue-500/30 rounded-lg px-4 py-2 text-sm"
-                 
-                  initial="initial"
-                  animate="animate"
-                >
-                  <div className="font-semibold">Risk Score: 18/100</div>
-                  <div className="text-blue-300 text-xs">94% Confidence</div>
-                </motion.div>
+                {/* Circular elements */}
+                <motion.div 
+                  className="absolute inset-0 border-2 border-blue-200 rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 150, repeat: Infinity, ease: "linear" }}
+                ></motion.div>
                 
-                <motion.div
-                  className="absolute -left-6 bottom-1/4 bg-green-900/40 backdrop-filter backdrop-blur-md border border-green-500/30 rounded-lg px-4 py-2 text-sm"
-             
-                  initial="initial"
-                  animate="animate"
-                  style={{ animationDelay: "1s" }}
-                >
-                  <div className="font-semibold">ROI Forecast: 4.8x</div>
-                  <div className="text-green-300 text-xs">36-month Horizon</div>
-                </motion.div>
+                <motion.div 
+                  className="absolute inset-12 border-2 border-blue-200 rounded-full"
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
+                ></motion.div>
+                
+                <motion.div 
+                  className="absolute inset-24 border-2 border-blue-200 rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+                ></motion.div>
+                
+                {/* Animated nodes */}
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-4 h-4 bg-blue-600 rounded-full"
+                    style={{
+                      top: `${50 + 42 * Math.sin((i / 4) * Math.PI)}%`,
+                      left: `${50 + 42 * Math.cos((i / 4) * Math.PI)}%`,
+                    }}
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.6, 1, 0.6]
+                    }}
+                    transition={{
+                      duration: 3,
+                      delay: i * 0.4,
+                      repeat: Infinity,
+                      repeatType: "reverse"
+                    }}
+                  ></motion.div>
+                ))}
+                
+                {/* Connection lines - using SVG */}
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400">
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                    <motion.line
+                      key={i}
+                      x1="200"
+                      y1="200"
+                      x2={200 + 168 * Math.cos((i / 4) * Math.PI)}
+                      y2={200 + 168 * Math.sin((i / 4) * Math.PI)}
+                      stroke="rgba(37, 99, 235, 0.3)"
+                      strokeWidth="1"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ 
+                        duration: 1.5, 
+                        delay: i * 0.2,
+                        repeat: Infinity,
+                        repeatType: "loop",
+                        repeatDelay: 5
+                      }}
+                    />
+                  ))}
+                </svg>
               </div>
             </motion.div>
-          </motion.div>
-          
-          
-        </motion.div>
-      </section>
-
-
-
-      {/* Key Benefits with animated icons and cards */}
-      <section id="benefits" className="py-16 px-6 sm:px-12 md:px-24 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 text-transparent bg-clip-text">
-              Ruthless Competitive Advantage
-            </h2>
-            <p className="text-xl text-blue-300 max-w-3xl mx-auto">
-              Mano has proprietary algorithms that have been trained on the most successful investment decisions in the world to give you an unfair edge.
-            </p>
           </div>
-          
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            variants={animations.staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-          >
-            {KEY_BENEFITS.map((benefit, index) => (
-              <motion.div 
-                key={index} 
-                variants={animations.fadeIn}
-                className="relative group"
-              >
-                {/* Card with glassmorphism effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl transform group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-300"></div>
-                
-                <div className="relative bg-gradient-to-br from-gray-900 to-black border border-blue-500/20 rounded-xl p-8 h-full z-10 transform group-hover:-translate-x-1 group-hover:-translate-y-1 transition-transform duration-300">
-                  {/* Animated icon */}
-                  <motion.div 
-                    className="text-5xl mb-6 text-blue-400 bg-blue-900/30 w-16 h-16 flex items-center justify-center rounded-lg"
-               
-                    initial="initial"
-                    animate="animate"
-                  >
-                    {benefit.icon}
-                  </motion.div>
-                  
-                  <h3 className="text-2xl font-bold mb-4 text-white">{benefit.title}</h3>
-                  <p className="text-blue-200">{benefit.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
-      </section>
-
-      {/* Testimonials section with 3D card effect */}
-      <section id="testimonials" className="py-24 px-6 sm:px-12 md:px-24 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 text-transparent bg-clip-text">
-              What Elite Investors Are Saying
-            </h2>
-            <p className="text-xl text-blue-300 max-w-3xl mx-auto">
-              Top investment firms in the world have radically transformed their results with Mano.
-            </p>
-          </div>
-          
-          <div className="relative">
-            {/* Decorative elements */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[120%] h-80 bg-gradient-to-r from-blue-600/0 via-blue-600/20 to-blue-600/0 rounded-full filter blur-[100px] -z-10"></div>
-            
-            {/* Testimonial carousel */}
-            <div className="relative h-[480px] flex items-center justify-center">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentTestimonial}
-                  initial={{ opacity: 0, rotateY: -40, scale: 0.9 }}
-                  animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotateY: 40, scale: 0.9 }}
-                  transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  {/* Testimonial card */}
-                  <div className="max-w-3xl w-full transform perspective-1000">
-                    <div className="relative bg-gradient-to-br from-gray-900 to-black border border-blue-500/30 rounded-2xl p-10 shadow-2xl overflow-hidden">
-                      {/* Quote icon */}
-                      <div className="absolute top-6 left-6 text-6xl text-blue-500/20 z-0">`&quot;`</div>
-                      <div className="absolute bottom-6 right-6 text-6xl text-blue-500/20 transform rotate-180 z-0">`&quot;`</div>
-                      
-                      {/* Background glow */}
-                      <div className="absolute top-1/4 right-1/4 w-40 h-40 bg-blue-500 rounded-full filter blur-[100px] opacity-20 z-0"></div>
-                      
-                      {/* Content */}
-                      <div className="relative z-10">
-                        <p className="text-2xl mb-8 text-blue-100 leading-relaxed font-light">
-                          {TESTIMONIALS[currentTestimonial].quote}
-                        </p>
-                        
-                        
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-            
-            {/* Navigation indicators */}
-            <div className="flex justify-center mt-8 space-x-3">
-              {TESTIMONIALS.map((_, index) => (
-                <button 
+        
+        {/* Performance metrics strip */}
+        <div className="absolute bottom-0 left-0 right-0 bg-zinc-900 py-8 px-8 md:px-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {STATS.map((stat, index) => (
+                <motion.div 
                   key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`relative w-16 h-1 rounded-full transition-all duration-300 ${
-                    index === currentTestimonial ? 'bg-blue-500' : 'bg-blue-900'
-                  }`}
-                  aria-label={`View testimonial ${index + 1}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
+                  className="text-center"
                 >
-                  {index === currentTestimonial && (
-                    <motion.div 
-                      className="absolute inset-0 bg-blue-400"
-                      initial={{ width: 0 }}
-                      animate={{ width: "100%" }}
-                      transition={{ duration: 5, ease: "linear" }}
-                    />
-                  )}
-                </button>
+                  <div className="text-4xl md:text-5xl font-bold text-white mb-2">{stat.value}</div>
+                  <div className="text-zinc-400 uppercase tracking-wider text-sm">{stat.label}</div>
+                </motion.div>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Success stories with animated metrics */}
-      <section id="stories" ref={storiesRef} className="py-24 px-6 sm:px-12 md:px-24 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 text-transparent bg-clip-text">
-              Client Success Stories
-            </h2>
-            <p className="text-xl text-blue-300 max-w-3xl mx-auto">
-              Real results from firms that deployed our intelligence engine.
-            </p>
+      {/* Bold Feature Section */}
+      <section id="features" ref={featureRef} className="py-32 px-8 md:px-16 relative">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-50 to-transparent"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-24">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-5xl md:text-6xl font-bold mb-6"
+            >
+              Weaponized <span className="text-blue-600">Intelligence</span>
+            </motion.h2>
+            <motion.div 
+              initial={{ width: 0 }}
+              whileInView={{ width: "120px" }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className="h-1 bg-blue-600 mx-auto mb-8"
+            ></motion.div>
+            <motion.p 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-xl text-zinc-600 max-w-3xl mx-auto"
+            >
+              Our platform combines complex algorithms with intuitive design
+              to deliver intelligence that outperforms human analysis.
+            </motion.p>
           </div>
           
-          <motion.div
-            initial="hidden"
-            animate={storiesInView ? "visible" : "hidden"}
-            variants={animations.staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
-            {SUCCESS_STORIES.map((story, index) => (
-              <motion.div 
-                key={index} 
-                variants={animations.fadeIn}
-                className="group"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
+            {/* Feature Image */}
+            <div className="relative">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="relative z-10"
               >
-                <div className="bg-gradient-to-br from-gray-900 to-black border border-blue-500/20 rounded-xl overflow-hidden h-full transition-transform transform group-hover:scale-[1.03] group-hover:shadow-xl group-hover:shadow-blue-500/10">
-                  {/* Top colored band */}
-                  <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                  
-                  <div className="p-8">
-                    <div className="mb-6">
-                      <div className="text-xs text-blue-400 uppercase tracking-wide mb-2">{story.industry}</div>
-                      <h3 className="text-xl font-bold mb-4 text-white">{story.title}</h3>
-                      <p className="text-blue-200 mb-6">{story.description}</p>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="bg-blue-900/30 px-4 py-2 rounded-lg">
-                        <div className="text-sm text-blue-400">Result</div>
-                        <div className="text-2xl font-bold text-white">{story.metric}</div>
-                      </div>
-                      
-                      <button className="text-blue-400 hover:text-blue-300 transition">
-                        <span className="mr-2">Read Case Study</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <img 
+                  src="/main.png" 
+                  alt="Mano Dashboard" 
+                  className="w-full rounded-xl shadow-2xl border-2 border-zinc-100"
+                />
               </motion.div>
-            ))}
-          </motion.div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-blue-100 rounded-full filter blur-3xl opacity-50 -z-10"></div>
+              <div className="absolute -top-24 -right-24 w-40 h-40 border-8 border-blue-200 rounded-full -z-10"></div>
+            </div>
+            
+            {/* Feature Details */}
+            <div>
+              <div className="space-y-12">
+                {[
+                  {
+                    number: "01",
+                    title: "Quantum Pattern Recognition",
+                    description: "Identify investment patterns invisible to human analysts through our proprietary neural network trained on 200,000+ successful investments."
+                  },
+                  {
+                    number: "02",
+                    title: "Pre-cognitive Risk Detection",
+                    description: "Anticipate catastrophic failure points before they emerge with 94.6% accuracy based on multi-dimensional risk analysis."
+                  },
+                  {
+                    number: "03",
+                    title: "Decision Acceleration",
+                    description: "Cut investment decision cycles by 78% while simultaneously increasing decision confidence by 64%."
+                  }
+                ].map((feature, index) => (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.2 * index }}
+                    className="group"
+                  >
+                    <div className="flex items-start">
+                      <div className="text-5xl font-bold text-blue-100 group-hover:text-blue-200 transition-colors duration-300">
+                        {feature.number}
+                      </div>
+                      <div className="ml-6">
+                        <h3 className="text-2xl font-bold mb-4 group-hover:text-blue-600 transition-colors duration-300">
+                          {feature.title}
+                        </h3>
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          whileInView={{ width: "60px" }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.6, delay: 0.4 + 0.2 * index }}
+                          className="h-1 bg-blue-600 mb-4"
+                        ></motion.div>
+                        <p className="text-zinc-600">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Enhanced Features Section with interactive tabs */}
-      <section id="features" ref={featuresRef} className="py-24 px-6 sm:px-12 md:px-24 relative z-10 overflow-hidden">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 text-transparent bg-clip-text">
-              Military-Grade Intelligence Tools
-            </h2>
-            <p className="text-xl text-blue-300 max-w-3xl mx-auto">
-              Weaponized AI capabilities that give you an unfair advantage at every stage of the investment process.
-            </p>
-          </div>
-          
-          {/* Feature tabs */}
-          <div className="flex flex-wrap justify-center mb-12 space-x-2">
-            {FEATURES.map((feature, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveTab(index)}
-                className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 my-2 ${
-                  activeTab === index 
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-400 text-white shadow-lg shadow-blue-500/20' 
-                    : 'bg-gray-900 text-blue-300 hover:bg-gray-800'
-                }`}
+      {/* Interactive Demonstration Section */}
+      <section className="py-32 px-8 md:px-16 bg-zinc-900 text-white overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+            <div>
+              <motion.h2 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="text-5xl font-bold mb-6"
               >
-                {feature.title}
-              </button>
-            ))}
-          </div>
-          
-          {/* Feature details */}
-          <motion.div
-            initial="hidden"
-            animate={featuresInView ? "visible" : "hidden"}
-            variants={animations.staggerContainer}
-            className="relative"
-          >
-            {/* Background glow effect that moves with tab selection */}
-            <motion.div 
-              className="absolute top-1/2 left-0 w-full h-96 bg-blue-600 filter blur-[180px] opacity-10 -z-10"
-              animate={{ 
-                left: `${(activeTab * 25)}%` 
-              }}
-              transition={{
-                duration: 0.7,
-                ease: [0.25, 0.1, 0.25, 1]
-              }}
-            />
-            
-            <div className="bg-gradient-to-br from-gray-900 to-black border border-blue-500/20 rounded-xl overflow-hidden shadow-2xl">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5 }}
-                  className="p-8 md:p-12"
+                Intelligence in <span className="text-blue-400">Action</span>
+              </motion.h2>
+              
+              <motion.div 
+                initial={{ width: 0 }}
+                whileInView={{ width: "120px" }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, delay: 0.2 }}
+                className="h-1 bg-blue-400 mb-8"
+              ></motion.div>
+              
+              <motion.p 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="text-xl text-zinc-300 mb-12"
+              >
+                Watch how Mano processes complex investment data in real-time, identifying opportunities
+                and risks invisible to human analysts.
+              </motion.p>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className="flex flex-wrap gap-6"
+              >
+                {["Pattern Detection", "Risk Analysis", "Opportunity Scoring"].map((tab, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveSection(index)}
+                    className={`px-6 py-3 border-2 transition-colors duration-300 ${
+                      activeSection === index 
+                        ? "border-blue-400 bg-blue-400/10 text-white" 
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                className="mt-12"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowForm(true)}
+                  className="px-10 py-4 bg-blue-600 text-white hover:bg-blue-500 transition-colors duration-300 font-medium tracking-wider uppercase shadow-lg shadow-blue-900/50 flex items-center"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-12 items-center">
-                    <div className="md:col-span-3">
-                      <h3 className="text-3xl font-bold mb-6 text-white">{FEATURES[activeTab].title}</h3>
-                      <p className="text-blue-200 text-lg mb-8">{FEATURES[activeTab].description}</p>
-                      
-                      <ul className="space-y-4">
-                        {FEATURES[activeTab].benefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start">
-                            <div className="bg-blue-500/20 p-1 rounded-full mr-4 mt-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                            <span className="text-blue-100">{benefit}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      
-                      <button className="mt-8 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold flex items-center shadow-lg shadow-blue-700/20 transition transform hover:translate-y-[-2px]">
-                        <span>Explore This Feature</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      {/* Feature visualization */}
-                      <div className="relative">
-                        {/* Animated background elements */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl transform translate-x-4 translate-y-4"></div>
+                  <span>Request Demo</span>
+                  <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </motion.button>
+              </motion.div>
+            </div>
+            
+            <div className="relative min-h-[500px] flex items-center justify-center">
+              {/* Interactive visualization */}
+              <div className="relative w-full h-full">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8 }}
+                  className="relative z-10 bg-zinc-800 border border-zinc-700 rounded-xl p-8 h-full"
+                >
+                  <div className="h-64 mb-6 bg-zinc-900 rounded-lg overflow-hidden relative">
+                    {/* Pattern Detection Graph */}
+                    {activeSection === 0 && (
+                      <svg className="w-full h-full" viewBox="0 0 400 200">
+                        <motion.path 
+                          d="M0,150 C50,120 100,170 150,120 C200,70 250,180 300,100 C350,20 400,80 400,60" 
+                          fill="none" 
+                          stroke="#3b82f6" 
+                          strokeWidth="3"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 2, delay: 0.5 }}
+                        />
                         
-                        <div className="relative bg-gradient-to-br from-gray-900 to-black border border-blue-500/20 rounded-xl p-8 z-10">
-                          {/* Feature icon */}
-                          <div className="flex justify-center mb-6 text-6xl">
-  {FEATURES[activeTab].icon === "graph" && "📊"}
-  {FEATURES[activeTab].icon === "magnify" && "🔍"}
-  {FEATURES[activeTab].icon === "chart" && "📈"}
-  {FEATURES[activeTab].icon === "radar" && "📡"}
-</div>
-
-                          
-                          {/* Feature-specific visualization */}
-                          
-                        </div>
-                      </div>
-                    </div>
+                        <motion.path 
+                          d="M0,180 C50,160 100,140 150,160 C200,180 250,100 300,140 C350,180 400,120 400,140" 
+                          fill="none" 
+                          stroke="#60a5fa" 
+                          strokeWidth="2"
+                          strokeDasharray="5,5"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 2, delay: 0.8 }}
+                        />
+                        
+                        {/* Highlight points */}
+                        <motion.circle 
+                          cx="150" cy="120" r="6" 
+                          fill="#3b82f6"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: 1.5 }}
+                        />
+                        
+                        <motion.circle 
+                          cx="300" cy="100" r="6" 
+                          fill="#3b82f6"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: 1.7 }}
+                        />
+                      </svg>
+                    )}
+                    
+                    {/* Risk Analysis Visualization */}
+                    {activeSection === 1 && (
+                      <svg className="w-full h-full" viewBox="0 0 400 200">
+                        <defs>
+                          <linearGradient id="riskGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#ef4444" stopOpacity="0.8" />
+                            <stop offset="50%" stopColor="#eab308" stopOpacity="0.6" />
+                            <stop offset="100%" stopColor="#22c55e" stopOpacity="0.4" />
+                          </linearGradient>
+                        </defs>
+                        
+                        {/* Risk heatmap */}
+                        <motion.rect 
+                          x="50" y="30" width="300" height="140" 
+                          fill="url(#riskGradient)"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 1, delay: 0.5 }}
+                        />
+                        
+                        {/* Risk markers */}
+                        {[
+                          { x: 100, y: 50, r: 8, color: "#ef4444" },
+                          { x: 180, y: 100, r: 6, color: "#eab308" },
+                          { x: 250, y: 150, r: 10, color: "#22c55e" },
+                          { x: 320, y: 60, r: 7, color: "#ef4444" }
+                        ].map((marker, i) => (
+                          <motion.circle
+                            key={i}
+                            cx={marker.x}
+                            cy={marker.y}
+                            r={marker.r}
+                            fill={marker.color}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.4, delay: 0.8 + i * 0.2 }}
+                          />
+                        ))}
+                      </svg>
+                    )}
+                    
+                    {/* Opportunity Scoring */}
+                    {activeSection === 2 && (
+                      <svg className="w-full h-full" viewBox="0 0 400 200">
+                        {[
+                          { x: 50, height: 80 },
+                          { x: 100, height: 120 },
+                          { x: 150, height: 60 },
+                          { x: 200, height: 180 },
+                          { x: 250, height: 90 },
+                          { x: 300, height: 140 }
+                        ].map((bar, i) => (
+                          <motion.rect
+                            key={i}
+                            x={bar.x}
+                            y={200 - bar.height}
+                            width="30"
+                            height={bar.height}
+                            fill={bar.height > 130 ? "#3b82f6" : "#94a3b8"}
+                            initial={{ height: 0, y: 200 }}
+                            animate={{ height: bar.height, y: 200 - bar.height }}
+                            transition={{ duration: 1, delay: 0.3 + i * 0.1 }}
+                          />
+                        ))}
+                        
+                        {/* Highlight the best opportunity */}
+                        <motion.rect
+                          x={195}
+                          y={15}
+                          width="40"
+                          height="40"
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="2"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.5, delay: 1.5 }}
+                        />
+                        
+                        <motion.text
+                          x="200"
+                          y="40"
+                          fontSize="12"
+                          fill="#ffffff"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.5, delay: 1.7 }}
+                        >
+                          94%
+                        </motion.text>
+                      </svg>
+                    )}
+                  </div>
+                  
+                  {/* Data points below chart */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { label: "Confidence", value: "92%" },
+                      { label: "Data Points", value: "127.8K" },
+                      { label: "Time", value: "1.2s" }
+                    ].map((data, i) => (
+                      <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 1 + i * 0.1 }}
+                        className="bg-zinc-800 p-4 border border-zinc-700 rounded-lg"
+                      >
+                        <div className="text-sm text-zinc-500 mb-1">{data.label}</div>
+                        <div className="text-xl font-bold text-white">{data.value}</div>
+                      </motion.div>
+                    ))}
                   </div>
                 </motion.div>
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Pricing section */}
-      <section id="pricing" className="py-24 px-6 sm:px-12 md:px-24 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 text-transparent bg-clip-text">
-              Investment-Grade Pricing
-            </h2>
-            <p className="text-xl text-blue-300 max-w-3xl mx-auto">
-              Pricing structured to deliver overwhelming ROI for sophisticated capital allocators.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Basic tier */}
-            <div className="bg-gradient-to-br from-gray-900 to-black border border-blue-500/20 rounded-xl overflow-hidden relative">
-              <div className="p-8">
-                <h3 className="text-xl font-bold mb-2 text-white">Professional</h3>
-                <p className="text-blue-300 mb-6">For individual investors and small funds</p>
                 
-                <div className="flex items-end mb-6">
-                  <div className="text-4xl font-bold text-white">$2,900</div>
-                  <div className="text-blue-400 ml-2 mb-1">/month</div>
-                </div>
-                
-                <ul className="space-y-3 mb-8">
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Up to 100 deals analyzed per month
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Core risk assessment engine
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Basic pattern recognition
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Standard reporting
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-red-400">✗</span> Email support
-  </li>
-</ul>
-
-                
-                <button className="w-full py-3 border border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg font-semibold transition">
-                  Request Access
-                </button>
-              </div>
-            </div>
-            
-            {/* Business tier (highlighted) */}
-            <div className="relative transform md:scale-[1.05] z-10">
-              {/* Highlight effect */}
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur"></div>
-              
-              <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl overflow-hidden relative">
-                <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-4 py-1 uppercase tracking-wider">
-                  Most Popular
-                </div>
-                
-                <div className="p-8">
-                  <h3 className="text-xl font-bold mb-2 text-white">Enterprise</h3>
-                  <p className="text-blue-300 mb-6">For established funds and family offices</p>
-                  
-                  <div className="flex items-end mb-6">
-                    <div className="text-4xl font-bold text-white">$9,750</div>
-                    <div className="text-blue-400 ml-2 mb-1">/month</div>
-                  </div>
-                  
-              
-
-                  <ul className="space-y-3 mb-8">
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Unlimited deal analysis
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Advanced risk assessment engine
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Full pattern recognition suite
-  </li>
-</ul>
-
-                  
-                  <button onClick={() => setShowForm(true)} className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white rounded-lg font-semibold transition shadow-lg shadow-blue-500/20">
-                    Request Demo
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Enterprise tier */}
-            <div className="bg-gradient-to-br from-gray-900 to-black border border-blue-500/20 rounded-xl overflow-hidden">
-              <div className="p-8">
-                <h3 className="text-xl font-bold mb-2 text-white">Institutional</h3>
-                <p className="text-blue-300 mb-6">For institutional investors managing $1B+</p>
-                
-                <div className="mb-6">
-                  <div className="text-4xl font-bold text-white">Custom</div>
-                  <div className="text-blue-400">Tailored pricing</div>
-                </div>
-                
-               
-
-                <ul className="space-y-3 mb-8">
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Unlimited everything
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Custom AI model training
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> Dedicated account team
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-green-400">✓</span> API access & custom integrations
-  </li>
-  <li className="flex items-center text-blue-200">
-    <span className="mr-3 text-red-400">✗</span> 24/7 priority support
-  </li>
-</ul>
-                
-                <button className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-semibold transition">
-                  Contact Sales
-                </button>
+                {/* Background elements */}
+                <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-900/20 rounded-full filter blur-3xl -z-10"></div>
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 border-2 border-blue-800/30 rounded-full -z-10"></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA section with animated particles */}
-      <section ref={ctaRef} className="py-32 px-6 sm:px-12 md:px-24 relative z-10">
-        <motion.div
-          initial="hidden"
-          animate={ctaInView ? "visible" : "hidden"}
-          variants={animations.staggerContainer}
-          className="max-w-4xl mx-auto text-center relative"
-        >
-          {/* Animated background elements */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200%] h-96 bg-gradient-to-r from-blue-600/0 via-blue-600/20 to-blue-600/0 rounded-full filter blur-[100px]"></div>
-          </div>
-          
-          <motion.h2 
-            variants={animations.fadeIn}
-            className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-200 text-transparent bg-clip-text leading-tight"
+      {/* Powerful CTA Section */}
+      <section ref={ctaRef} className="py-32 px-8 md:px-16 relative overflow-hidden">
+        {/* Background gradient elements */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-b from-blue-50 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-t from-blue-50 to-transparent"></div>
+        </div>
+        
+        <div className="max-w-5xl mx-auto text-center relative">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-5xl md:text-7xl font-bold mb-8"
           >
-            Ready to Weaponize Your Investment Intelligence?
+            Gain Your Unfair <span className="text-blue-600">Advantage</span>
           </motion.h2>
           
-          <motion.p 
-            variants={animations.fadeIn}
-            className="text-xl text-blue-300 mb-10 max-w-3xl mx-auto"
+          <motion.div 
+            initial={{ width: 0 }}
+            whileInView={{ width: "160px" }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="h-1 bg-blue-600 mx-auto mb-10"
+          ></motion.div>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="text-xl text-zinc-600 mb-12 max-w-3xl mx-auto"
           >
-            Join the elite firms already using Mano to make faster, smarter investment decisions with military-grade AI.
+            Join elite investment professionals already using Mano to identify opportunities
+            others miss and make decisions with extraordinary confidence.
           </motion.p>
           
-          <motion.div 
-            variants={animations.fadeIn}
-            className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6"
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setShowForm(true)}
-              className="px-8 py-5 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-full font-bold text-lg shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:from-blue-500 hover:to-blue-300 transition transform hover:translate-y-[-2px]"
+              className="px-12 py-6 bg-blue-600 text-white text-lg hover:bg-blue-700 transition-colors duration-300 font-medium tracking-wider uppercase shadow-xl shadow-blue-300/20 group"
             >
-              Apply for Exclusive Access
-            </button>
+              <span>Request Exclusive Access</span>
+              <svg className="inline-block ml-2 w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </motion.button>
             
-            <button className="px-8 py-5 border border-blue-500 text-blue-400 rounded-full font-bold text-lg hover:bg-blue-900/30 transition transform hover:translate-y-[-2px]">
-              Schedule Demo
-            </button>
+            <div className="mt-8 text-zinc-500 text-sm">
+              Limited to 50 firms this quarter
+            </div>
           </motion.div>
-          
-          <motion.div 
-            variants={animations.fadeIn}
-            className="mt-12 inline-block bg-blue-900/30 border border-blue-500/30 rounded-full px-6 py-2 text-sm text-blue-300"
-          >
-            <span className="mr-2 bg-green-500 rounded-full w-2 h-2 inline-block animate-pulse"></span>
-            93 investors viewing this page right now
-          </motion.div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* Enhanced Access Form Modal with more fields and effects */}
+      {/* Modern Footer */}
+      <footer className="py-16 px-8 md:px-16 bg-zinc-900 text-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div>
+            <div className="text-2xl font-bold tracking-tight flex items-center mb-6">
+              <span className="text-white">mano</span>
+              <span className="text-blue-400">.</span>
+            </div>
+            <p className="text-zinc-400 mb-6">
+              Investment intelligence for elite professionals.
+            </p>
+            <div className="flex space-x-4">
+              <a href="#" className="text-zinc-400 hover:text-white transition-colors">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd"></path>
+                </svg>
+              </a>
+              <a href="#" className="text-zinc-400 hover:text-white transition-colors">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+                </svg>
+              </a>
+              <a href="#" className="text-zinc-400 hover:text-white transition-colors">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"></path>
+                </svg>
+              </a>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-bold mb-6">Platform</h3>
+            <ul className="space-y-4">
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Features</a></li>
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Pricing</a></li>
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Resources</a></li>
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Roadmap</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-bold mb-6">Company</h3>
+            <ul className="space-y-4">
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">About</a></li>
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Careers</a></li>
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Contact</a></li>
+              <li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Privacy</a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto border-t border-zinc-800 mt-16 pt-8 text-zinc-500 text-sm">
+          © 2025 Mano Technologies, Inc. All rights reserved.
+        </div>
+      </footer>
+
+      {/* High-impact Access Request Modal */}
       <AnimatePresence>
         {showForm && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 px-6"
+            className="fixed inset-0 bg-zinc-900/90 backdrop-blur-md flex items-center justify-center z-50 px-6"
             onClick={(e) => {
               if (e.target === e.currentTarget) setShowForm(false);
             }}
@@ -1072,111 +837,117 @@ export default function HomePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4 }}
-              className="bg-gradient-to-br from-gray-900 to-black border border-blue-500/30 rounded-xl max-w-md w-full relative overflow-hidden"
+              className="bg-white rounded-lg max-w-md w-full relative overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 to-blue-600 opacity-20 animate-gradient-x"></div>
-              
               {/* Close button */}
               <button 
                 onClick={() => setShowForm(false)}
-                className="absolute top-4 right-4 text-white hover:text-blue-400 transition"
+                className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-700 transition-colors z-10"
                 aria-label="Close form"
-                >
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
-               {/* Modal content */}
-               <div className="relative z-10 p-8">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">Apply for Exclusive Access</h3>
-                  <p className="text-blue-300">Only 20 firms will be onboarded this quarter.</p>
-                </div>
-
+              
+              {/* Decorative element */}
+              <div className="h-2 bg-blue-600 w-full absolute top-0 left-0"></div>
+              
+              {/* Modal content */}
+              <div className="p-10">
                 {formSubmitted ? (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-12"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-8"
                   >
-                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <h4 className="text-2xl font-bold text-green-400 mb-2">Application Received!</h4>
-                    <p className="text-blue-300 text-sm max-w-xs mx-auto">
-                      Thank you for applying. Our partnerships team will be in touch shortly.
+                    <h4 className="text-2xl font-bold text-zinc-900 mb-4">Request Submitted</h4>
+                    <p className="text-zinc-600">
+                      Thank you for your interest in Mano. Our team will review your application and contact you shortly.
                     </p>
                   </motion.div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="Full Name"
-                      required
-                      className="w-full p-3 rounded-lg border border-blue-500/20 bg-gray-800 text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="Work Email"
-                      required
-                      className="w-full p-3 rounded-lg border border-blue-500/20 bg-gray-800 text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      name="organization"
-                      value={formData.organization}
-                      onChange={handleChange}
-                      placeholder="Firm Name"
-                      required
-                      className="w-full p-3 rounded-lg border border-blue-500/20 bg-gray-800 text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      placeholder="Your Role"
-                      className="w-full p-3 rounded-lg border border-blue-500/20 bg-gray-800 text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      name="aum"
-                      value={formData.aum}
-                      onChange={handleChange}
-                      placeholder="Firm AUM (Optional)"
-                      className="w-full p-3 rounded-lg border border-blue-500/20 bg-gray-800 text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  <>
+                    <div className="text-center mb-8">
+                      <h3 className="text-3xl font-bold text-zinc-900 mb-2">Request VIP Access</h3>
+                      <p className="text-zinc-600">Join elite firms gaining an unfair advantage with Mano.</p>
+                    </div>
+                    
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div>
+                        <label htmlFor="name" className="block text-sm font-medium text-zinc-700 mb-1">Full Name</label>
+                        <input
+                          id="name"
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
+                          className="w-full p-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-zinc-700 mb-1">Work Email</label>
+                        <input
+                          id="email"
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          className="w-full p-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="organization" className="block text-sm font-medium text-zinc-700 mb-1">Organization</label>
+                        <input
+                          id="organization"
+                          type="text"
+                          name="organization"
+                          value={formData.organization}
+                          onChange={handleChange}
+                          required
+                          className="w-full p-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
 
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className={`w-full p-3 rounded-lg font-semibold transition ${
-                        isSubmitting
-                          ? "bg-gray-600 cursor-not-allowed"
-                          : "bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white shadow-lg shadow-blue-500/20"
-                      }`}
-                    >
-                      {isSubmitting ? "Submitting..." : "Apply Now"}
-                    </button>
-                  </form>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className={`w-full p-4 rounded-lg font-medium tracking-wider uppercase transition-colors duration-300 ${
+                          isSubmitting
+                            ? "bg-zinc-400 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                        }`}
+                      >
+                        {isSubmitting ? "Processing..." : "Submit Request"}
+                      </button>
+                      
+                      <div className="text-center text-zinc-500 text-sm">
+                        By submitting, you agree to our <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>.
+                      </div>
+                    </form>
+                  </>
                 )}
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
     </main>
   );
+}
+
+function setMouseEnterDelay() {
+  // Implement the function or remove it if not needed
+  console.log("Mouse enter delay set.");
 }
